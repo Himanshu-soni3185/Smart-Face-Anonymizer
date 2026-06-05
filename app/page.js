@@ -66,7 +66,7 @@ export default function Home() {
     formData.append('file', file);
     
     try {
-      const response = await fetch('http://localhost:5000/process', {
+      const response = await fetch(process.env.NEXT_PUBLIC_BACKEND+'/process', {
         method: 'POST',
         body: formData,
       });
