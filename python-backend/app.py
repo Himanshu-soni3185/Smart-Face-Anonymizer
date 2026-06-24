@@ -80,18 +80,14 @@ def detect_faces_yunet(frame):
 
 
 def apply_blur(image, faces):
-    """Apply strong smooth Gaussian blur — classic TV/news style anonymization."""
+    """Fill each face with its own average color — solid flat block style."""
     for (x, y, w, h) in faces:
         if w < 1 or h < 1:
             continue
         face_roi = image[y:y+h, x:x+w]
-        # Kernel size scales with face size for consistent heavy blur
-        # Minimum 51px, always odd
-        k = max(51, (min(w, h) // 2) | 1)
-        blurred = cv2.GaussianBlur(face_roi, (k, k), 0)
-        # Second pass for extra strength
-        blurred = cv2.GaussianBlur(blurred, (k, k), 0)
-        image[y:y+h, x:x+w] = blurred
+        # Compute average color of the face (gives a natural skin-tone block)
+        avg_color = cv2.mean(face_roi)[:3]   # (B, G, R)
+        image[y:y+h, x:x+w] = avg_color
     return image
 
 
@@ -157,8 +153,8 @@ def blur_video_task(video_path, output_path, job_id, skip_frames=2):
         if max(width, height) > MAX_DIM:
             scale = MAX_DIM / max(width, height)
 
-        # ★ Use mp4v codec → standard .mp4, smaller file, faster encode than VP80
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        # VP80/WebM — only codec guaranteed to play in browser <video> tag
+        fourcc = cv2.VideoWriter_fourcc(*'vp80')
         out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
 
         frame_idx = 0
@@ -248,7 +244,7 @@ def process_file():
 
     elif ext in video_exts:
         job_id = unique_id
-        output_path = os.path.join(OUTPUT_FOLDER, f"{unique_id}_output.mp4")
+        output_path = os.path.join(OUTPUT_FOLDER, f"{unique_id}_output.webm")
         job_store[job_id] = {"status": "processing", "progress": 0}
         t = threading.Thread(
             target=blur_video_task,
@@ -299,8 +295,8 @@ def download_result(job_id):
     threading.Thread(target=_cleanup, args=(output_path,), daemon=True).start()
     del job_store[job_id]
 
-    return send_file(output_path, mimetype='video/mp4', as_attachment=True,
-                     download_name=f"anonymized_video.mp4")
+    return send_file(output_path, mimetype='video/webm', as_attachment=True,
+                     download_name=f"anonymized_video.webm")
 
 
 if __name__ == '__main__':

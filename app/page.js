@@ -182,7 +182,7 @@ export default function Home() {
 
   const progressValue = stage === "uploading" ? uploadPct : processPct;
 
-  const downloadExt = isVideo ? "mp4" : "jpg";
+  const downloadExt = isVideo ? "webm" : "jpg";
   const downloadName = `anonymized_${file ? file.name.replace(/\.[^/.]+$/, "") : "file"}.${downloadExt}`;
 
   return (
