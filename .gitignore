@@ -49,6 +49,16 @@ python-backend/__pycache__/
 # Uploads & Generated Files
 python-backend/uploads/
 python-backend/outputs/
+*.mp4
+*.webm
+*.avi
+*.mov
+*.mkv
+*.jpg
+*.jpeg
+*.png
+!app/icon.png
+!assets/smart-face-anonymizer-ui.png
 
 # Python Environment
 .venv/

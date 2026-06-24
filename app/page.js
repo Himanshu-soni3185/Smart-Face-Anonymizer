@@ -152,18 +152,19 @@ export default function Home() {
     formData.append("file", file);
 
     try {
-      const result = await uploadWithProgress(formData);
-
-      if (result.type === "image") {
-        // Convert blob responseType back properly
-        const blob = result.blob instanceof Blob ? result.blob : new Blob([result.blob]);
-        const url = URL.createObjectURL(blob);
-        setResultUrl(url);
-        setResultMime(result.mime || "image/jpeg");
-        setStage("done");
-      } else if (result.type === "video_job") {
-        trackVideoJob(result.job_id);
+      const response = await fetch('http://localhost:5000/process', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to process file');
       }
+      
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      setResultUrl(url);
     } catch (err) {
       setError(err.message);
       setStage("error");
