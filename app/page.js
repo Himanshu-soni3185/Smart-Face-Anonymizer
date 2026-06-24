@@ -70,16 +70,29 @@ export default function Home() {
           // Image: direct blob response
           resolve({ type: "image", blob: xhr.response, mime: xhr.getResponseHeader("Content-Type") });
         } else if (xhr.status === 202) {
-          // Video: async job
-          const data = JSON.parse(xhr.responseText);
-          resolve({ type: "video_job", job_id: data.job_id });
+          // Video: response is a Blob (responseType="blob"), must read as text first
+          const reader = new FileReader();
+          reader.onload = () => {
+            try {
+              const data = JSON.parse(reader.result);
+              resolve({ type: "video_job", job_id: data.job_id });
+            } catch {
+              reject(new Error("Invalid server response for video job"));
+            }
+          };
+          reader.readAsText(xhr.response);
         } else {
-          try {
-            const err = JSON.parse(xhr.responseText);
-            reject(new Error(err.error || "Processing failed"));
-          } catch {
-            reject(new Error("Processing failed"));
-          }
+          // Error: also a Blob — read as text to get the error message
+          const reader = new FileReader();
+          reader.onload = () => {
+            try {
+              const err = JSON.parse(reader.result);
+              reject(new Error(err.error || "Processing failed"));
+            } catch {
+              reject(new Error(`Server error (${xhr.status})`));
+            }
+          };
+          reader.readAsText(xhr.response);
         }
       };
 
